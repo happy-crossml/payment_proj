@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> Transaction Form </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"crossorigin="anonymous"></script>
+    
+    <style>
+        .btn:focus,
+        a:focus,
+        input:focus {
+            outline: none;
+        }
+        th {
+            background-color: blue;
+            color: white;
+        } 
+
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid bg-light py-5">
+        
+        <div class="container mb-3">
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <span class="border-primary-subtle border-5 border-start ps-2 fw-bold h4"> General Journal </span>
+                </div>
+                <div class="col-12 justify-content-end text-end">
+                    <div class="dropdown">
+                        <button class="btn border bg-white rounded-0  dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            Select exiting template to load
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">Action</a></li>
+                            <li><a class="dropdown-item" href="#">Another action</a></li>
+                            <li><a class="dropdown-item" href="#">Something else here</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container bg-white p-5">
+            
+            <form action="{% url 'transactions' %}">
+                {% csrf_token %}
+                <div class="row mb-3">
+                    <div class="col-12 col-md-6 col-lg-4 mb-3">
+                        <label for="inputTemplateName" class="form-label text-muted">Template Name</label>
+                        <div class="input-group">
+                            <input type="text" id="inputTemplateName"
+                                class="form-control rounded-0 border border-end-0 outline-none">
+                            <span class="input-group-text rounded-0 text-muted border border-start-0 bg-white"><i
+                                    class="bi bi-file-zip"></i></span>
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-4"></div>
+                    <div class="col-12 col-lg-4">
+                        <div class="row">
+                            <div class="col-12 col-md-6 mb-3">
+                                <label for="selectcurrency" class="form-label text-muted">Currency</label>
+                                <select class="form-select rounded-0" id="selectcurrency" aria-label="Currency Select">
+                                    <option value="1" selected>USD</option>
+                                    <option value="2">INR</option>
+                                    <option value="3">EUR</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="inputAUD" class="form-label text-muted">AUD Conversion</label>
+                                <input type="number" id="inputAUD"
+                                    class="form-control rounded-0 outline-none">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-12 col-lg-4 mb-3">
+                        <label for="inputTransactionDate" class="form-label text-muted">Transaction Date: <span class="text-danger">*</span></label>
+                                <input type="date" id="inputTransactionDate"
+                                    class="form-control rounded-0 outline-none">
+                    </div>
+                    <div class="col-12 col-lg-4 mb-3">
+                        <label for="inputRefrenceNumber" class="form-label text-muted">Refrence Number: <span class="text-danger">*</span></label>
+                                <input type="number" id="inputRefrenceNumber"
+                                    class="form-control rounded-0 outline-none">
+                    </div>
+                    <div class="col-12 col-lg-4 mb-3">
+                        <label for="inputTransactionNumber" class="form-label text-muted">Transaction Number: </label>
+                                <input type="number" id="inputTransactionNumber"
+                                    class="form-control rounded-0 outline-none">
+                    </div>
+                </div>
+
+                <!--table start-->
+                <div class="container">
+                    <table class="table table-striped">
+                      <thead>
+                        <tr>
+                          <th scope="col">Account</th>
+                          <th scope="col">Debit</th>
+                          <th scope="col">Credit</th>
+                          <th scope="col">Quantity</th>
+                          <th scope="col">Description</th>
+                        </tr>
+                      </thead>
+                      <tbody id="transactionTableBody">
+                        {% for transaction in transactions %}
+                        <tr>
+                          <td>
+                            <select class="form-select"  aria-label="Default select example" onchange="transactionField(this)">
+                              <option selected disabled>Choose Account</option>
+                              {% for t in transactions %} 
+                              <option value="{{ t.id }}" {% if selected_transaction and t.id == selected_transaction.id %} selected {% endif %}>{{ t.account }}</option>
+                              {% endfor %}
+                            </select>   
+                          </td> 
+                          <td>{{ transaction.debit }}</td>
+                          <td>{{ transaction.credit }}</td> 
+                          <td>{{ transactions.quantity }}</td>
+                          <td>{{ transactions.description }}</td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  <script>
+                    function updateTotals() {
+                        var table = document.getElementById("transactionTable");
+                        var checkboxes = table.getElementsByClassName("transaction-checkbox");
+                        var debitDiff = 0;
+                        var creditDiff = 0;
+                      
+                        // Calculate diff and highlight matching rows
+                        for (var i = 0; i < checkboxes.length; i++) {
+                          var checkbox = checkboxes[i];
+                          var row = checkbox.parentNode.parentNode;
+                          var debitCell = row.cells[2];
+                          var creditCell = row.cells[1];
+                          var debit = parseFloat(debitCell.innerText) || 0;
+                          var credit = parseFloat(creditCell.innerText) || 0;
+                      
+                          if (checkbox.checked) {
+                            debitDiff += debit;
+                            creditDiff += credit;
+                            row.classList.add("green-row");
+                          } else {
+                            debitDiff -= debit;
+                            creditDiff -= credit;
+                            row.classList.remove("green-row");
+                          }
+                        }
+                      
+                        var totalDiff = creditDiff - debitDiff;
+                      
+                        document.getElementById("debitDiff").textContent =
+                          "Debit Diff: " + debitDiff.toFixed(2);
+                        document.getElementById("creditDiff").textContent =
+                          "Credit Diff: " + creditDiff.toFixed(2);
+                        document.getElementById("totalDiff").textContent =
+                          "Total Diff: " + totalDiff.toFixed(2);
+                      }
+                      
+                  </script>
+                  
+                <!--table end-->
+
+                <div class="row ">
+                    <div class="col-12 col-lg-4 mb-3">
+                        <textarea class="form-control rounded-0" id="comentTextArea" rows="3" placeholder="General Comments"></textarea>
+                    </div>
+                    <div class="col-12 col-lg-4"></div>
+                    <div class="col-12 col-lg-4">
+                        <div class="row">
+                            <div class="col-6 text-muted">
+                                <div class="row mb-2 justify-content-end">Total Debit: </div>
+                                <div class="row mb-2 justify-content-end">Total Credit: </div>
+                                <div class="row mb-2 justify-content-end">Out of Balance: </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="row mb-2 justify-content-end" id="totalDebitAmount">0.00</div>
+                                <div class="row mb-2 justify-content-end" id="totalCreditAmount">0.00</div>
+                                <div class="row mb-2 justify-content-end" id="outOfBalanceAmount">0.00</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">submit</button>
+                <button type="button" class="btn btn-secondary">Cancel</button>
+                <button type="button" class="btn btn-secondary">Save Tenplate</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+    <script>
+        // Get table body element
+        const tableBody = document.getElementById("transactionTableBody");
+
+        // Get total debit, credit and out of balance amount
+        const totalDebitAmount = document.getElementById("totalDebitAmount");
+        const totalCreditAmount = document.getElementById("totalCreditAmount");
+        const outOfBalanceAmount = document.getElementById("outOfBalanceAmount");
+
+        let totalDebit = 0;
+        let totalCredit = 0;
+
+        //calculate the total debit and total credit
+        for (let row of tableBody.rows) {
+            // Parse the debit and credit values from the row
+            const debit = parseFloat(row.cells[1].textContent);
+            const credit = parseFloat(row.cells[2].textContent);
+
+            // Update the total debit and total credit amounts
+            totalDebit += debit;
+            totalCredit += credit;
+        }
+
+        // Update the total debit and total credit amounts
+        totalDebitAmount.textContent = totalDebit.toFixed(2);
+        totalCreditAmount.textContent = totalCredit.toFixed(2);
+
+        // Calculate the out of balance amount
+        const outOfBalance = totalDebit - totalCredit;
+
+        // Update the out of balance amount
+        outOfBalanceAmount.textContent = outOfBalance.toFixed(2);
+
+        // Generate random name & numbers for template, transaction_number & refrence_number.
+        var templateName = "Template_" + Math.floor(Math.random() * 10000);
+        var referenceNumber = Math.floor(Math.random() * 9000000000) + 1000000000;
+        var transactionNumber = Math.floor(Math.random() * 9000000000) + 1000000000;
+        document.getElementById("inputTemplateName").value = templateName;
+        document.getElementById("inputRefrenceNumber").value = referenceNumber;
+        document.getElementById("inputTransactionNumber").value = transactionNumber;
+            
+    </script>
+        
+</body>
+
+</html>
+

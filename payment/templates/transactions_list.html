@@ -1,0 +1,137 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title> Transaction Table </title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+        
+        th {
+            background-color: yellow;
+        }
+
+        .green-row {
+            background-color: lightgreen;
+        }
+
+        .totals {
+            font-weight: bold;
+            text-align: right;
+            margin-right: 20px;
+        }
+        h1 {
+            text-align:center
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1> Transaction Data Table </h1>
+    
+    <div style="overflow-x: auto;">
+        <table id="transactionTable">
+            <thead>
+                <tr>
+                   
+                    <th>Transaction No</th>
+                    <th>Credit</th>
+                    <th>Debit</th>
+                    <th>Comments</th>
+                </tr>
+            </thead>
+            <tbody style="background-color: yellow;">
+                {% for t in transaction %}
+                <tr>
+                    <td><input type="checkbox" class="transaction-checkbox" onchange="updateTotals()"> {{t.account}}</td>
+                    <td>{{t.credit}}</td>
+                    <td>{{t.debit}}</td>
+                    <td>{{t.comment}}</td>
+                </tr>
+                {% endfor %}    
+            </tbody>
+        </table>
+    </div>
+
+    <div id="totalsSection" class="totals row justify-content-end"> 
+        <p><span id="debitDiff">Debit Diff: 0.00</span></p>
+        <p><span id="creditDiff">Credit Diff: 0.00</span></p>
+        <p><span id="totalDiff">Total Diff: 0.00</span></p>
+    </div> 
+
+    <script>
+        function updateTotals() {
+            var table = document.getElementById("transactionTable");
+            var checkboxes = table.getElementsByClassName("transaction-checkbox");
+            var debitDiff = 0;
+            var creditDiff = 0;
+            var totalDiff = 0;
+          
+            // Reset bg colors
+            var rows = table.getElementsByTagName("tr");
+            for (var i = 0; i < rows.length; i++) {
+              rows[i].classList.remove("green-row");
+            }
+          
+            // Calculate diff and highlight matching rows
+            var transactions = {};
+            for (var i = 0; i < checkboxes.length; i++) {
+              var checkbox = checkboxes[i];
+              var row = checkbox.parentNode.parentNode;
+              var transactionNo = row.cells[0].innerText;
+              var debit = parseFloat(row.cells[2].innerText) || 0;
+              var credit = parseFloat(row.cells[1].innerText) || 0;
+          
+              if (checkbox.checked) {
+                debitDiff += debit;
+                creditDiff += credit;
+                transactions[transactionNo] = {
+                  debit: debit,
+                  credit: credit,
+                };
+              } else {
+                debitDiff -= debit;
+                creditDiff -= credit;
+              }
+            }
+          
+            // Highlight matching rows
+            for (var i = 0; i < checkboxes.length; i++) {
+              var checkbox = checkboxes[i];
+              var row = checkbox.parentNode.parentNode;
+              var transactionNo = row.cells[0].innerText;
+              var debit = parseFloat(row.cells[2].innerText) || 0;
+              var credit = parseFloat(row.cells[1].innerText) || 0;
+          
+              if (
+                checkbox.checked &&
+                transactions[transactionNo] &&
+                (transactions[transactionNo].debit === debit ||
+                  transactions[transactionNo].credit === credit)
+              ) {
+                row.classList.add("green-row");
+              }
+            }
+          
+            totalDiff = creditDiff - debitDiff;
+          
+            document.getElementById("debitDiff").textContent =
+              "Debit Diff: " + debitDiff.toFixed(2);
+            document.getElementById("creditDiff").textContent =
+              "Credit Diff: " + creditDiff.toFixed(2);
+            document.getElementById("totalDiff").textContent =
+              "Total Diff: " + totalDiff.toFixed(2);
+          }
+          
+    </script>
+</body>
+</html>
